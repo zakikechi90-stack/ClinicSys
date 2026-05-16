@@ -3,7 +3,6 @@
 import { Users, Stethoscope, CalendarClock } from "lucide-react"
 import { useChefLanguage } from "@/src/lib/chef-language-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { Badge } from "@/src/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
 
 interface ChefStats {
@@ -27,14 +26,6 @@ interface ChefDashboardContentProps {
   todayAppointments: TodayAppointment[]
 }
 
-const statusColors: Record<string, string> = {
-  scheduled: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  confirmed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  in_progress: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  completed: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
-  cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  no_show: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-}
 
 export function ChefDashboardContent({ stats, userName, todayAppointments }: ChefDashboardContentProps) {
   const { t } = useChefLanguage()
@@ -91,7 +82,6 @@ export function ChefDashboardContent({ stats, userName, todayAppointments }: Che
                   <TableHead>{t.appointmentTime}</TableHead>
                   <TableHead>{t.appointmentPatient}</TableHead>
                   <TableHead>{t.appointmentService}</TableHead>
-                  <TableHead>{t.appointmentStatus}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -106,15 +96,6 @@ export function ChefDashboardContent({ stats, userName, todayAppointments }: Che
                         : "—"}
                     </TableCell>
                     <TableCell>{appt.services?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge className={appt.status === 'completed' 
-                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
-                        : appt.status === 'cancelled'
-                        ? "bg-red-100 text-red-800"
-                        : "bg-blue-500/10 text-blue-600 border-blue-500/20"}>
-                        {appt.status === 'completed' ? "Terminé" : appt.status === 'cancelled' ? "Annulé" : "À venir"}
-                      </Badge>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
