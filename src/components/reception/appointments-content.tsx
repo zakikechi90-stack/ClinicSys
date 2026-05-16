@@ -137,6 +137,7 @@ export function AppointmentsContent({
     time: "",
   })
   const [bookedTimes, setBookedTimes] = useState<string[]>([])
+  const [daySchedules, setDaySchedules] = useState<ScheduleRow[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
 
   const availableDoctors = formData.serviceId
@@ -158,10 +159,8 @@ export function AppointmentsContent({
     const dateObj = new Date(formData.date + "T00:00:00")
     const dayOfWeek = dateObj.getDay()
 
-    // Find schedules for this doctor on this day
-    const doctorSchedulesForDay = schedules.filter(
-      (s) => s.doctor_id === formData.doctorId && s.day_of_week === dayOfWeek && s.is_active
-    )
+    // Use the dynamically fetched schedules for the day
+    const doctorSchedulesForDay = daySchedules
 
     if (doctorSchedulesForDay.length === 0) {
       return { slots: [], scheduleForDay: [] }
@@ -199,15 +198,25 @@ export function AppointmentsContent({
       return
     }
 
-    const fetchBooked = async () => {
+    const fetchBookedAndSchedule = async () => {
       setLoadingSlots(true)
-      const { data } = await supabase
-        .from("appointments")
-        .select("appointment_time")
-        .eq("doctor_id", formData.doctorId)
-        .eq("appointment_date", formData.date)
+      const dayOfWeek = new Date(formData.date + "T00:00:00").getDay()
+      
+      const [bookedRes, scheduleRes] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select("appointment_time")
+          .eq("doctor_id", formData.doctorId)
+          .eq("appointment_date", formData.date),
+        supabase
+          .from("doctor_schedules")
+          .select("*")
+          .eq("doctor_id", formData.doctorId)
+          .eq("day_of_week", dayOfWeek)
+          .eq("is_active", true)
+      ])
 
-      const booked = (data as any[] ?? []).map((a: any) => a.appointment_time?.slice(0, 5))
+      const booked = (bookedRes.data as any[] ?? []).map((a: any) => a.appointment_time?.slice(0, 5))
       // If editing, don't count the current appointment's time as booked
       if (editingAppointment && editingAppointment.doctor_id === formData.doctorId && editingAppointment.appointment_date === formData.date) {
         const editTime = editingAppointment.appointment_time?.slice(0, 5)
@@ -215,10 +224,12 @@ export function AppointmentsContent({
       } else {
         setBookedTimes(booked)
       }
+
+      setDaySchedules(scheduleRes.data as ScheduleRow[] ?? [])
       setLoadingSlots(false)
     }
 
-    fetchBooked()
+    fetchBookedAndSchedule()
   }, [formData.doctorId, formData.date, editingAppointment, supabase])
 
   const { slots: availableSlots, scheduleForDay } = getAvailableSlots()
@@ -300,6 +311,42 @@ export function AppointmentsContent({
     setIsSaving(true)
 
     try {
+      // Final availability validation against fresh database state
+      const dayOfWeek = new Date(formData.date + "T00:00:00").getDay()
+      const { data: freshSchedules } = await supabase
+        .from("doctor_schedules")
+        .select("*")
+        .eq("doctor_id", formData.doctorId)
+        .eq("day_of_week", dayOfWeek)
+        .eq("is_active", true)
+
+      const isWithinSchedule = (freshSchedules as any[] ?? []).some(s => {
+        const start = s.start_time.slice(0, 5)
+        const end = s.end_time.slice(0, 5)
+        return formData.time >= start && formData.time < end
+      })
+
+      if (!isWithinSchedule) {
+        toast.error("Le médecin n'est plus disponible à cet horaire (le planning a peut-être été modifié).")
+        setIsSaving(false)
+        return
+      }
+
+      // Check if slot was booked in the meantime
+      const { data: alreadyBooked } = await supabase
+        .from("appointments")
+        .select("id")
+        .eq("doctor_id", formData.doctorId)
+        .eq("appointment_date", formData.date)
+        .eq("appointment_time", formData.time)
+        .not("id", "eq", editingAppointment?.id || "00000000-0000-0000-0000-000000000000")
+
+      if (alreadyBooked && alreadyBooked.length > 0) {
+        toast.error("Ce créneau vient d'être réservé par un autre utilisateur.")
+        setIsSaving(false)
+        return
+      }
+
       const payload = {
         patient_id: formData.patientId,
         doctor_id: formData.doctorId,

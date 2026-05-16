@@ -640,7 +640,7 @@ export async function fetchReceptionStats() {
       supabase
         .from("appointments")
         .select("id", { count: "exact", head: true })
-        .not("status", "in", '("cancelled","completed")')
+        .eq("status", "scheduled")
         .or(`appointment_date.gt.${todayStr},and(appointment_date.eq.${todayStr},appointment_time.gte.${timeStr})`),
       supabase
         .from("ambulance_requests")
