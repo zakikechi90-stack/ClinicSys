@@ -211,9 +211,6 @@ export function DashboardContent({ stats: initialStats }: { stats: AdminStats })
             <div className="col-span-2">
               <StatCard icon={CalendarCheck} label="Aujourd'hui" value={fmt(stats.today_appointments)} color="bg-blue-500/10 text-blue-600" />
             </div>
-            <div className="col-span-2">
-              <StatCard icon={CalendarClock} label="À venir" value={fmt(stats.upcoming_appointments)} color="bg-amber-500/10 text-amber-600" />
-            </div>
           </div>
 
           {/* Chart */}
