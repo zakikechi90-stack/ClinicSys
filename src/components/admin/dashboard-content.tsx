@@ -211,14 +211,11 @@ export function DashboardContent({ stats: initialStats }: { stats: AdminStats })
             <div className="col-span-2">
               <StatCard icon={CalendarCheck} label="Aujourd'hui" value={fmt(stats.today_appointments)} color="bg-blue-500/10 text-blue-600" />
             </div>
-            <StatCard icon={CheckCircle2} label="Terminés" value={fmt(stats.completed_appointments)} color="bg-emerald-500/10 text-emerald-600" />
-            <StatCard icon={CalendarClock} label="À venir" value={fmt(stats.upcoming_appointments)} color="bg-amber-500/10 text-amber-600" />
-            <div className="col-span-2 rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Taux de complétion</p>
-              <p className="text-2xl font-bold text-foreground">{stats.appointment_completion_rate}%</p>
-              <ProgressBar value={stats.appointment_completion_rate} color="bg-emerald-500" />
+            <div className="col-span-2">
+              <StatCard icon={CalendarClock} label="À venir" value={fmt(stats.upcoming_appointments)} color="bg-amber-500/10 text-amber-600" />
             </div>
           </div>
+
           {/* Chart */}
           <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-5 shadow-sm">
             <p className="text-sm font-semibold text-foreground mb-4">Rendez-vous — 7 derniers jours</p>
@@ -229,19 +226,15 @@ export function DashboardContent({ stats: initialStats }: { stats: AdminStats })
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="gCompleted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
                 </defs>
+
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
                 <Area type="monotone" dataKey="total" name="Total" stroke="#3b82f6" strokeWidth={2} fill="url(#gTotal)" dot={false} />
-                <Area type="monotone" dataKey="completed" name="Terminés" stroke="#10b981" strokeWidth={2} fill="url(#gCompleted)" dot={false} />
-                <Area type="monotone" dataKey="cancelled" name="Annulés" stroke="#ef4444" strokeWidth={1.5} fill="none" dot={false} strokeDasharray="4 2" />
+
               </AreaChart>
             </ResponsiveContainer>
           </div>
