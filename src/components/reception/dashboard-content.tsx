@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/src/components/ui/card"
 
 interface ReceptionStats {
   total_patients: number
-  today_appointments: number
   pending_ambulances: number
   active_hospitalizations: number
   pending_invoices: number
@@ -29,12 +28,6 @@ export function ReceptionDashboardContent({
       value: stats.total_patients,
       icon: Users,
       color: "bg-blue-500/10 text-blue-600",
-    },
-    {
-      label: t.totalAppointments,
-      value: stats.today_appointments,
-      icon: Calendar,
-      color: "bg-green-500/10 text-green-600",
     },
     {
       label: t.ambulance,

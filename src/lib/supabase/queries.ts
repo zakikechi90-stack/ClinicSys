@@ -617,31 +617,11 @@ export async function fetchDoctorSchedules(doctorId?: string) {
 
 export async function fetchReceptionStats() {
   const supabase = await createClient()
-  // Use timezone-aware current date and time
-  const now = new Date();
-
-  // Format as local YYYY-MM-DD
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const todayStr = `${year}-${month}-${day}`;
-
-  // Format as HH:MM:SS
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  const timeStr = `${hours}:${minutes}:${seconds}`;
-
-  const [patientsRes, appointmentsRes, ambulanceRes, hospitalizationsRes, invoicesRes] =
+  const [patientsRes, ambulanceRes, hospitalizationsRes, invoicesRes] =
     await Promise.all([
       supabase
         .from("patients")
         .select("id", { count: "exact", head: true }),
-      supabase
-        .from("appointments")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "scheduled")
-        .or(`appointment_date.gt.${todayStr},and(appointment_date.eq.${todayStr},appointment_time.gte.${timeStr})`),
       supabase
         .from("ambulance_requests")
         .select("id", { count: "exact", head: true })
@@ -658,7 +638,6 @@ export async function fetchReceptionStats() {
 
   return {
     total_patients: patientsRes.count ?? 0,
-    today_appointments: appointmentsRes.count ?? 0,
     pending_ambulances: ambulanceRes.count ?? 0,
     active_hospitalizations: hospitalizationsRes.count ?? 0,
     pending_invoices: invoicesRes.count ?? 0,
@@ -670,9 +649,8 @@ export async function fetchDoctorStats(doctorId: string) {
   
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-  const [patientsRes, consultationsRes, todayAppsRes, completedAppsRes, upcomingAppsRes] = await Promise.all([
+  const [patientsRes, consultationsRes, todayAppsRes] = await Promise.all([
     supabase
       .from("patients")
       .select("id", { count: "exact", head: true })
@@ -687,29 +665,12 @@ export async function fetchDoctorStats(doctorId: string) {
       .select("id", { count: "exact", head: true })
       .eq("doctor_id", doctorId)
       .eq("appointment_date", todayStr),
-    // Completed today (status completed OR past time)
-    supabase
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("doctor_id", doctorId)
-      .eq("appointment_date", todayStr)
-      .or(`status.eq.completed,and(status.not.eq.cancelled,appointment_time.lt.${timeStr})`),
-    // Upcoming today
-    supabase
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("doctor_id", doctorId)
-      .eq("appointment_date", todayStr)
-      .not("status", "in", '("cancelled","completed")')
-      .gte("appointment_time", timeStr),
   ])
 
   return {
     total_patients: patientsRes.count ?? 0,
     total_consultations: consultationsRes.count ?? 0,
     today_appointments: todayAppsRes.count ?? 0,
-    completed_today: completedAppsRes.count ?? 0,
-    upcoming_today: upcomingAppsRes.count ?? 0,
   }
 }
 
